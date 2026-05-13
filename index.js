@@ -1,15 +1,17 @@
 const express = require('express')
 const app = express()
-const PORT = process.env.PORT || 8000
 const cors = require('cors')
 const dotenv = require('dotenv')
 
 dotenv.config()
 app.use(cors())
+app.use(express.json())
 
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const port = process.env.PORT
 const uri = process.env.MONGODB_URI;
+
 
 
 const client = new MongoClient(uri, {
@@ -24,8 +26,16 @@ async function run() {
     try {
         await client.connect();
 
-        app.get('/', (req, res) => {
-            res.send('Hello World!')
+        const db = client.db("wanderlust-server");
+        const destinationsCollection = db.collection("destinations");
+
+        app.post('/destinations', async (req, res) => {
+            const destinations = req.body;
+            console.log(destinations);
+
+            const result = await destinationsCollection.insertOne(destinations);
+            console.log(result);
+            res.send(result);
         })
 
 
@@ -37,6 +47,6 @@ async function run() {
 }
 run().catch(console.dir);
 
-app.listen(PORT, () => {
-    console.log(`Example app listening on port ${PORT}`)
+app.listen(port, () => {
+    console.log(`Example app listening on port ${port}`)
 })
