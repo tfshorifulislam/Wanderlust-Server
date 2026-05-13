@@ -1,4 +1,8 @@
+const dns = require("node:dns");
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
 const express = require('express')
+
 const app = express()
 const cors = require('cors')
 const dotenv = require('dotenv')
@@ -8,7 +12,7 @@ app.use(cors())
 app.use(express.json())
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT
 const uri = process.env.MONGODB_URI;
 
@@ -37,6 +41,30 @@ async function run() {
             console.log(result);
             res.send(result);
         })
+
+        app.get('/destinations', async (req, res) => {
+            const result = await destinationsCollection.find().toArray();
+            console.log('Destinations found:', result);
+            res.send(result);
+        })
+
+        app.get('/destinations/:id', async (req, res) => {
+            const {id} = req.params;
+            const result = await destinationsCollection.findOne({ _id: new ObjectId(id) });
+            console.log('Destination found:', result);
+            res.send(result);
+        })
+
+
+
+        app.patch('/destinations/:id', async (req, res) => {
+            const {id} = req.params;
+            const updateData = req.body;
+            const result = await destinationsCollection.updateOne({_id: new ObjectId(id)}, {$set: updateData});
+            console.log(result);
+            res.send(result);
+        })
+
 
 
         await client.db("admin").command({ ping: 1 });
