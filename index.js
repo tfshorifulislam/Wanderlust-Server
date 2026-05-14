@@ -34,6 +34,22 @@ async function run() {
         const destinationsCollection = db.collection("destinations");
         const bookingCollection = db.collection("bookings");
 
+
+        app.get('/bookings/:userId', async (req, res) => {
+            const { userId } = req.params;
+            const result = await bookingCollection.find({ userId: userId }).toArray();
+            console.log('Bookings found:', result);
+            res.send(result);
+        });
+
+        app.delete('/bookings/:id', async (req, res) => {
+            const { id } = req.params;
+            const result = await bookingCollection.deleteOne({ _id: new ObjectId(id) });
+            console.log('Bookings deleted:', result);
+            res.send(result);
+        });
+
+
         app.post('/bookings', async (req, res) => {
             const bookingData = req.body;
             const result = await bookingCollection.insertOne(bookingData);
