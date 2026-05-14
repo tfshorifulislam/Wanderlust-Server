@@ -32,6 +32,14 @@ async function run() {
 
         const db = client.db("wanderlust-server");
         const destinationsCollection = db.collection("destinations");
+        const bookingCollection = db.collection("bookings");
+
+        app.post('/bookings', async (req, res) => {
+            const bookingData = req.body;
+            const result = await bookingCollection.insertOne(bookingData);
+            console.log('Booking created:', result);
+            res.send(result);
+        })
 
         app.post('/destinations', async (req, res) => {
             const destinations = req.body;
