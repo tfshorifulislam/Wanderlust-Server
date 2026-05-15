@@ -13,6 +13,7 @@ app.use(express.json())
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { jwtVerify, createRemoteJWKSet } = require("jose-cjs");
 const port = process.env.PORT
 const uri = process.env.MONGODB_URI;
 
@@ -25,6 +26,36 @@ const client = new MongoClient(uri, {
         deprecationErrors: true,
     }
 });
+
+
+const JWKS = createRemoteJWKSet(new URL('http://localhost:3000/api/auth/jwks'))
+
+
+
+const verifyToken = async (req, res, next) => {
+    const header = req?.headers?.authorization;
+    console.log('Authorization header:', header);
+    if (!header) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    const token = header.split(' ')[1]
+    console.log('Token:', token);
+    if (!token) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    try {
+        const {payload} = await jwtVerify(token, JWKS);
+        console.log('Payload:', payload);
+        next();
+    } catch (error) {
+        console.error('Token verification failed:', error);
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+};
+
+
 
 async function run() {
     try {
@@ -72,7 +103,7 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/destinations/:id', async (req, res) => {
+        app.get('/destinations/:id', verifyToken, async (req, res) => {
             const { id } = req.params;
             const result = await destinationsCollection.findOne({ _id: new ObjectId(id) });
             console.log('Destination found:', result);
