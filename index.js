@@ -34,6 +34,7 @@ const JWKS = createRemoteJWKSet(new URL('http://localhost:3000/api/auth/jwks'))
 
 const verifyToken = async (req, res, next) => {
     const header = req?.headers?.authorization;
+    console.log(req.headers);
     console.log('Authorization header:', header);
     if (!header) {
         return res.status(401).json({ message: 'Unauthorized' });
@@ -45,7 +46,7 @@ const verifyToken = async (req, res, next) => {
     }
 
     try {
-        const {payload} = await jwtVerify(token, JWKS);
+        const { payload } = await jwtVerify(token, JWKS);
         console.log('Payload:', payload);
         next();
     } catch (error) {
@@ -61,19 +62,19 @@ async function run() {
     try {
         await client.connect();
 
-        const db = client.db("wanderlust-server");
+        const db = client.db("wanderlust");
         const destinationsCollection = db.collection("destinations");
         const bookingCollection = db.collection("bookings");
 
 
-        app.get('/bookings/:userId', async (req, res) => {
+        app.get('/bookings/:userId', verifyToken, async (req, res) => {
             const { userId } = req.params;
             const result = await bookingCollection.find({ userId: userId }).toArray();
             console.log('Bookings found:', result);
             res.send(result);
         });
 
-        app.delete('/bookings/:id', async (req, res) => {
+        app.delete('/bookings/:id', verifyToken, async (req, res) => {
             const { id } = req.params;
             const result = await bookingCollection.deleteOne({ _id: new ObjectId(id) });
             console.log('Bookings deleted:', result);
@@ -81,23 +82,22 @@ async function run() {
         });
 
 
-        app.post('/bookings', async (req, res) => {
+        app.post('/bookings', verifyToken, async (req, res) => {
             const bookingData = req.body;
             const result = await bookingCollection.insertOne(bookingData);
             console.log('Booking created:', result);
             res.send(result);
         })
 
-        app.post('/destinations', async (req, res) => {
+        app.post('/destinations', verifyToken, async (req, res) => {
             const destinations = req.body;
             console.log(destinations);
-
             const result = await destinationsCollection.insertOne(destinations);
             console.log(result);
             res.send(result);
         })
 
-        app.get('/destinations', async (req, res) => {
+        app.get('/destinations', async(req, res) => {
             const result = await destinationsCollection.find().toArray();
             console.log('Destinations found:', result);
             res.send(result);
@@ -111,7 +111,7 @@ async function run() {
         })
 
 
-        app.patch('/destinations/:id', async (req, res) => {
+        app.patch('/destinations/:id', verifyToken, async (req, res) => {
             const { id } = req.params;
             const updateData = req.body;
             const result = await destinationsCollection.updateOne({ _id: new ObjectId(id) }, { $set: updateData });
@@ -120,7 +120,7 @@ async function run() {
         })
 
 
-        app.delete('/destinations/:id', async (req, res) => {
+        app.delete('/destinations/:id', verifyToken, async (req, res) => {
             const { id } = req.params;
             const result = await destinationsCollection.deleteOne({ _id: new ObjectId(id) });
             console.log(result);
